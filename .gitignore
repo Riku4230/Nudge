@@ -1,0 +1,22 @@
+# Swift / Xcode
+.build/
+.swiftpm/
+.DS_Store
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+Package.resolved
+
+# Build artifacts
+build/
+*.app
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
+
+# Local state
+.claude/
+plans/

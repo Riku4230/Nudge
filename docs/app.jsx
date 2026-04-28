@@ -260,7 +260,7 @@ const AIDemo = ({ accent, glassStrength }) => {
     <section className="section section-ai" ref={ref} data-screen-label="03 AI Demo">
       <div className="section-head">
         <div className="kicker" style={{ color: accent }}>AI INPUT</div>
-        <h2>書いた文章が、そのままタスクになる。</h2>
+        <h2>書いた文章が、<br />そのままタスクになる。</h2>
         <p>日付、時刻、URL、リスト。意味のある情報を自動で抽出してくれます。</p>
       </div>
 
@@ -397,14 +397,17 @@ const SubtaskDemo = ({ accent, glassStrength }) => {
 
 const SyncSection = ({ accent }) => (
   <section className="section section-sync" data-screen-label="05 Sync">
+    <div className="section-head">
+      <div className="kicker" style={{ color: accent }}>NATIVE INTEGRATION</div>
+      <h2>乗り換え、不要。</h2>
+      <p>
+        Hutch は独自のデータストアを持ちません。EventKit で純正リマインダーを直接読み書きします。
+        だから、いま使っているリスト、iCloud 同期、共有リスト、iPhone 連携が、何もしなくてもそのまま使えます。
+      </p>
+    </div>
+
     <div className="sync-grid">
       <div className="sync-copy">
-        <div className="kicker" style={{ color: accent }}>NATIVE INTEGRATION</div>
-        <h2>乗り換え、不要。</h2>
-        <p>
-          Hutch は独自のデータストアを持ちません。EventKit で純正リマインダーを直接読み書きします。
-          だから、いま使っているリスト、iCloud 同期、共有リスト、iPhone 連携が、何もしなくてもそのまま使えます。
-        </p>
         <ul className="sync-list">
           <li><span className="sync-check" style={{ background: accent }}>✓</span> 既存のリスト構成をそのまま利用</li>
           <li><span className="sync-check" style={{ background: accent }}>✓</span> iCloud で iPhone / iPad と双方向同期</li>

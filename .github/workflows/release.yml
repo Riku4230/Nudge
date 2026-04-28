@@ -23,7 +23,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # RELEASE_TOKEN（オーナーの fine-grained PAT）があれば使用、無ければ GITHUB_TOKEN にフォールバック
+          # main の branch protection を回避するため、Cask 自動更新の push にはオーナー権限が必要
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Resolve version
         id: version

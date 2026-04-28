@@ -43,6 +43,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             }
             .store(in: &cancellables)
 
+        // 外観切替を NSApp 全体に反映（NSPopover 内のサブメニューも同時切替するため）
+        appCoordinator.$appearance
+            .receive(on: RunLoop.main)
+            .sink { mode in
+                NSApp.appearance = mode.nsAppearance
+            }
+            .store(in: &cancellables)
+        // 起動時の初期反映
+        NSApp.appearance = appCoordinator.appearance.nsAppearance
+
         reminderStore.requestAccessAndLoad()
     }
 

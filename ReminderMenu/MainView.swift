@@ -404,6 +404,15 @@ struct MainView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
+            if store.isDemoMode {
+                Text("DEMO")
+                    .font(.system(size: 9, weight: .bold).monospaced())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(MRTheme.accent, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+            }
+
             Button {
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
                     showListDropdown.toggle()

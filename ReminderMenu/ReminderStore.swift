@@ -213,6 +213,9 @@ final class ReminderStore: NSObject, ObservableObject {
     /// 進行中ステータスを表すタグ名（先頭の `#` は含めない）
     static let progressTag = "wip"
 
+    /// デモモード（HUTCH_DEMO=1 で起動）。EventKit に書き込まずダミーデータを表示する。
+    let isDemoMode: Bool = DemoMode.isEnabled
+
     /// 時刻なしリマインダーのデフォルト通知時刻（時 / 分）
     static let defaultDateOnlyHour = 17
     static let defaultDateOnlyMinute = 0
@@ -240,6 +243,9 @@ final class ReminderStore: NSObject, ObservableObject {
             name: .EKEventStoreChanged,
             object: eventStore
         )
+        if isDemoMode {
+            loadDemoSnapshot()
+        }
         startPulseTimer()
     }
 
@@ -337,7 +343,36 @@ final class ReminderStore: NSObject, ObservableObject {
     }
 
     var hasFullAccess: Bool {
-        authorizationStatus == .fullAccess
+        if isDemoMode { return true }
+        return authorizationStatus == .fullAccess
+    }
+
+    /// デモモード時のダミー全件を一度だけ流し込む。
+    private func loadDemoSnapshot() {
+        let snapshot = DemoData.make(using: eventStore)
+        let demoCalendars = snapshot.calendars.map { cal in
+            ReminderCalendar(
+                id: cal.calendarIdentifier,
+                title: cal.title,
+                color: Color(nsColor: NSColor(cgColor: cal.cgColor) ?? .systemOrange),
+                nsColor: NSColor(cgColor: cal.cgColor) ?? .systemOrange,
+                sourceTitle: "Demo",
+                count: snapshot.reminders.filter { $0.calendar.calendarIdentifier == cal.calendarIdentifier }.count
+            )
+        }
+        self.calendars = demoCalendars
+        self.reminders = snapshot.reminders
+        self.parentMap = snapshot.parentMap
+        self.childMap = Dictionary(grouping: snapshot.parentMap, by: { $0.value })
+            .mapValues { $0.map(\.key) }
+        self.authorizationStatus = .fullAccess
+        self.hasFullDiskAccess = true
+        self.lastError = nil
+    }
+
+    /// デモモード時に編集系操作を呼ばれた場合の共通レスポンス
+    private func denyDemoMutation() {
+        self.lastError = "デモモードでは編集できません。HUTCH_DEMO 環境変数を外して通常起動してください。"
     }
 
     var selectedSmartList: SmartList? {
@@ -438,6 +473,10 @@ final class ReminderStore: NSObject, ObservableObject {
     }
 
     func requestAccessAndLoad() {
+        if isDemoMode {
+            // デモデータは init() で既にセット済み。何もしない。
+            return
+        }
         authorizationStatus = EKEventStore.authorizationStatus(for: .reminder)
         switch authorizationStatus {
         case .fullAccess:
@@ -470,6 +509,7 @@ final class ReminderStore: NSObject, ObservableObject {
     }
 
     func reloadReminders() {
+        if isDemoMode { return }
         guard hasFullAccess else { return }
         if let activeFetch {
             eventStore.cancelFetchRequest(activeFetch)
@@ -499,6 +539,7 @@ final class ReminderStore: NSObject, ObservableObject {
 
     /// SQLite から親子マップを再構築。FDA 未許可は静かに失敗してフラット表示にフォールバック。
     private func refreshParentMap() {
+        if isDemoMode { return }   // デモは固定
         do {
             let map = try RemindersSQLite.loadParentMap()
             self.parentMap = map
@@ -545,6 +586,19 @@ final class ReminderStore: NSObject, ObservableObject {
     func addSubtask(under parent: EKReminder, title: String, memo: String? = nil) async throws {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+
+        if isDemoMode {
+            // デモモードでは Shortcuts を呼ばず in-memory に追加
+            let child = EKReminder(eventStore: eventStore)
+            child.title = trimmed
+            child.calendar = parent.calendar
+            if let memo, !memo.isEmpty { child.notes = memo }
+            reminders.append(child)
+            parentMap[child.calendarItemIdentifier] = parent.calendarItemIdentifier
+            childMap = Dictionary(grouping: parentMap, by: { $0.value })
+                .mapValues { $0.map(\.key) }
+            return
+        }
 
         let parentTitle = parent.title ?? ""
         let listName = parent.calendar.title
@@ -914,6 +968,15 @@ final class ReminderStore: NSObject, ObservableObject {
     }
 
     func removeReminder(_ reminder: EKReminder) {
+        if isDemoMode {
+            // 該当を in-memory から外す
+            reminders.removeAll { $0.calendarItemIdentifier == reminder.calendarItemIdentifier }
+            // 親子マップからも除く
+            parentMap.removeValue(forKey: reminder.calendarItemIdentifier)
+            childMap = Dictionary(grouping: parentMap, by: { $0.value })
+                .mapValues { $0.map(\.key) }
+            return
+        }
         do {
             try eventStore.remove(reminder, commit: true)
             reloadReminders()
@@ -941,6 +1004,10 @@ final class ReminderStore: NSObject, ObservableObject {
         reminder.priority = normalizedPriority(priority)
         reminder.calendar = resolveCalendar(calendarID: calendarID, listName: listName)
         reminder.dueDateComponents = dateComponents(for: dueDate, includesTime: includesTime)
+        if isDemoMode {
+            reminders.append(reminder)
+            return reminder
+        }
         try eventStore.save(reminder, commit: true)
         reloadReminders()
         return reminder
@@ -960,11 +1027,17 @@ final class ReminderStore: NSObject, ObservableObject {
             if let url = draft.url {
                 reminder.url = url
             }
-            try eventStore.save(reminder, commit: false)
+            if isDemoMode {
+                reminders.append(reminder)
+            } else {
+                try eventStore.save(reminder, commit: false)
+            }
             titles.append(draft.title)
         }
-        try eventStore.commit()
-        reloadReminders()
+        if !isDemoMode {
+            try eventStore.commit()
+            reloadReminders()
+        }
         return titles
     }
 
@@ -1096,6 +1169,7 @@ final class ReminderStore: NSObject, ObservableObject {
     }
 
     private func loadCalendars() {
+        if isDemoMode { return }   // デモは init() で固定
         guard hasFullAccess else { return }
         let counts = Dictionary(grouping: reminders) { $0.calendar.calendarIdentifier }
             .mapValues(\.count)
@@ -1182,6 +1256,11 @@ final class ReminderStore: NSObject, ObservableObject {
     }
 
     private func save(_ reminder: EKReminder) {
+        if isDemoMode {
+            // デモモードでは EventKit に書かず in-memory の published 配列だけ更新
+            objectWillChange.send()
+            return
+        }
         do {
             try eventStore.save(reminder, commit: true)
             reloadReminders()
@@ -1208,6 +1287,20 @@ final class ReminderStore: NSObject, ObservableObject {
     }
 
     private func resolveCalendar(calendarID: String?, listName: String?) -> EKCalendar {
+        if isDemoMode {
+            // 既存の reminder の calendar を再利用するのが一番安全
+            if let id = calendarID,
+               let match = reminders.first(where: { $0.calendar.calendarIdentifier == id })?.calendar {
+                return match
+            }
+            if let listName,
+               let match = reminders.first(where: { $0.calendar.title == listName })?.calendar {
+                return match
+            }
+            if let first = reminders.first?.calendar {
+                return first
+            }
+        }
         if let listName, let matched = calendar(named: listName) {
             return matched
         }

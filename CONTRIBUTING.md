@@ -49,6 +49,25 @@ pkill -f Hutch.app && open ~/Applications/Hutch.app
 
 依存関係はゼロ。Swift Package Manager だけでビルドできます。
 
+### デモモードで起動する
+
+スクリーンショットや録画で **自分の実タスクを映したくない** 時は `HUTCH_DEMO=1` を env var に渡して起動するとダミーデータで動きます。EventKit には一切書き込まないので安全です。
+
+```bash
+HUTCH_DEMO=1 open ~/Applications/Hutch.app
+```
+
+または恒久的に：
+
+```bash
+defaults write dev.remindermenu.app HUTCH_DEMO -bool true
+open ~/Applications/Hutch.app
+# 解除
+defaults delete dev.remindermenu.app HUTCH_DEMO
+```
+
+ヘッダー左に **DEMO** バッジが出ている間は、すべての操作が in-memory のみで実データに影響しません。
+
 ### よくあるトラブル
 
 - **「リマインダーへのアクセスが許可されていません」**: 初回ダイアログで許可するか、システム設定 → プライバシーとセキュリティ → リマインダーで Hutch を ON

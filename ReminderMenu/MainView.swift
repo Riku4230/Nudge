@@ -8,6 +8,30 @@ private enum InputMode: String, CaseIterable {
     case ai = "AI"
 }
 
+/// 一覧ビュー / カレンダービューの切替
+private enum ListViewMode: String, CaseIterable {
+    case list
+    case calendar
+
+    var systemImage: String {
+        switch self {
+        case .list: return "list.bullet"
+        case .calendar: return "calendar"
+        }
+    }
+
+    var help: String {
+        switch self {
+        case .list: return "カレンダー表示に切替"
+        case .calendar: return "リスト表示に切替"
+        }
+    }
+
+    func toggled() -> ListViewMode {
+        self == .list ? .calendar : .list
+    }
+}
+
 private struct OptionsPanelHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
@@ -87,6 +111,7 @@ struct MainView: View {
     @State private var showListDropdown = false
     @State private var showMoreMenu = false
     @State private var inputMode: InputMode = .normal
+    @State private var listViewMode: ListViewMode = .list
     @StateObject private var fnDoubleTap = FnDoubleTapMonitor()
     @State private var inputText = ""
     @State private var optionsOpen = false
@@ -301,6 +326,21 @@ struct MainView: View {
             Spacer()
 
             Button {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                    listViewMode = listViewMode.toggled()
+                }
+            } label: {
+                Image(systemName: listViewMode.toggled().systemImage)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(listViewMode == .calendar ? MRTheme.accent : Color.secondaryText)
+                    .frame(width: 26, height: 26)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.35), lineWidth: 0.5))
+            }
+            .buttonStyle(.plain)
+            .help(listViewMode.help)
+
+            Button {
                 store.showCompleted.toggle()
             } label: {
                 Image(systemName: store.showCompleted ? "checkmark.circle.fill" : "checkmark.circle")
@@ -426,8 +466,11 @@ struct MainView: View {
         Group {
             if !store.hasFullAccess {
                 permissionView
-            } else if store.filteredReminders.isEmpty {
+            } else if store.filteredReminders.isEmpty && listViewMode == .list {
                 emptyView
+            } else if listViewMode == .calendar {
+                CalendarView(reminders: store.filteredReminders)
+                    .environmentObject(store)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {

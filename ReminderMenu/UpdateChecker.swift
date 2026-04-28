@@ -26,6 +26,13 @@ final class UpdateChecker: ObservableObject {
         let bodyExcerpt: String?
     }
 
+    /// "What's new" シート用のリリースノート
+    struct ReleaseNotes: Equatable {
+        let version: String
+        let body: String
+        let url: URL
+    }
+
     /// アプリ起動時 / popover 表示時に呼ぶ。
     /// 過去 24h 以内に確認済みなら何もしない。
     func checkIfNeeded() async {
@@ -40,6 +47,30 @@ final class UpdateChecker: ObservableObject {
     /// テスト用 / ユーザーが手動でチェックしたい場合の入口
     func checkNow() async {
         await fetchLatest()
+    }
+
+    /// 指定バージョンの GitHub Release body を取得する（リリースノート表示用）。
+    /// 失敗時は nil。`version` は "0.2.1" / "v0.2.1" どちらでも OK。
+    func fetchReleaseNotes(for version: String) async -> ReleaseNotes? {
+        let tag = version.hasPrefix("v") ? version : "v\(version)"
+        guard let url = URL(string: "https://api.github.com/repos/\(repo)/releases/tags/\(tag)") else { return nil }
+
+        var request = URLRequest(url: url)
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("Hutch", forHTTPHeaderField: "User-Agent")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+            let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
+            return ReleaseNotes(
+                version: normalize(release.tag_name),
+                body: release.body ?? "",
+                url: URL(string: release.html_url) ?? url
+            )
+        } catch {
+            return nil
+        }
     }
 
     /// 「あとで」用。指定バージョンを 24h スキップする。

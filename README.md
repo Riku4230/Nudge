@@ -255,10 +255,11 @@ pkill -f Hutch.app && open ~/Applications/Hutch.app
 
 ## Contributing
 
-PR / Issue 歓迎。
+PR / Issue 歓迎。詳しくは [CONTRIBUTING.md](CONTRIBUTING.md) を参照。
 
 - バグ報告・機能要望: [Issue を開く](https://github.com/Riku4230/Hutch/issues/new)
 - セキュリティ: [SECURITY.md](SECURITY.md) を参照
+- 変更履歴: [CHANGELOG.md](CHANGELOG.md)
 
 ## ライセンス
 

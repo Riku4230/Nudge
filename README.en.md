@@ -255,10 +255,11 @@ No external dependencies (Swift Package Manager only; SQLite3 is provided by the
 
 ## Contributing
 
-PRs and issues welcome.
+PRs and issues welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 - Bug reports and feature requests: [open an issue](https://github.com/Riku4230/Hutch/issues/new)
 - Security: see [SECURITY.md](SECURITY.md)
+- Changelog: see [CHANGELOG.md](CHANGELOG.md)
 
 ## License
 

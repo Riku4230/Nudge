@@ -70,7 +70,7 @@ struct QuickAddView: View {
             }
             .buttonStyle(.plain)
             .help("閉じる")
-            .padding(8)
+            .offset(x: 8, y: -8)
         }
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)

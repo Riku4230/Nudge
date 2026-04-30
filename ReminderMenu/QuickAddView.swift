@@ -47,7 +47,6 @@ struct QuickAddView: View {
             if showSuccess {
                 successView
             } else {
-                headerBar
                 composerBar
                 if optionsOpen && inputMode != .ai {
                     Divider().opacity(0.3).padding(.horizontal, 12)
@@ -68,27 +67,6 @@ struct QuickAddView: View {
         .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
         .padding(12)
         .onAppear { inputFocused = true }
-    }
-
-    // MARK: - Header
-
-    private var headerBar: some View {
-        HStack {
-            Spacer()
-            Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(Color.secondaryText)
-                    .frame(width: 20, height: 20)
-                    .background(MRTheme.Surface.inset, in: Circle())
-                    .overlay(Circle().stroke(MRTheme.Border.hairline, lineWidth: 0.5))
-            }
-            .buttonStyle(.plain)
-            .help("閉じる")
-        }
-        .padding(.horizontal, 10)
-        .padding(.top, 8)
-        .padding(.bottom, 0)
     }
 
     // MARK: - Composer bar

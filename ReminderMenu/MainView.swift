@@ -1731,21 +1731,53 @@ struct MainView: View {
         inputFocused = true
     }
 
-    private func cycleSelection(forward: Bool) {
-        let smarts: [ReminderSelection] = SmartList.allCases.map { .smart($0) }
-        let calendars: [ReminderSelection] = store.calendars.map { .calendar($0.id) }
-        let all = smarts + calendars
-        guard !all.isEmpty else { return }
+    /// Tab / Shift+Tab で切り替える選択肢を表す。
+    /// スマート4つ + カレンダー表示（「すべて」のカレンダーモード）+ マイリスト。
+    private enum CycleEntry: Equatable {
+        case smart(SmartList)
+        case calendarView
+        case myList(String)
+    }
 
-        let currentIndex = all.firstIndex(of: store.selection) ?? -1
-        let next: Int
-        if forward {
-            next = (currentIndex + 1) % all.count
-        } else {
-            next = (currentIndex - 1 + all.count) % all.count
+    private func cycleSelection(forward: Bool) {
+        var entries: [CycleEntry] = SmartList.allCases.map { .smart($0) }
+        // 「すべて」の後にカレンダービューを挟む
+        if let allIdx = entries.firstIndex(of: .smart(.all)) {
+            entries.insert(.calendarView, at: allIdx + 1)
         }
+        entries += store.calendars.map { .myList($0.id) }
+        guard !entries.isEmpty else { return }
+
+        let current: CycleEntry
+        if listViewMode == .calendar && store.selectedSmartList == .all {
+            current = .calendarView
+        } else {
+            switch store.selection {
+            case .smart(let s): current = .smart(s)
+            case .calendar(let id): current = .myList(id)
+            }
+        }
+
+        let currentIndex = entries.firstIndex(of: current) ?? -1
+        let nextIndex: Int
+        if forward {
+            nextIndex = (currentIndex + 1) % entries.count
+        } else {
+            nextIndex = (currentIndex - 1 + entries.count) % entries.count
+        }
+
         withAnimation(.spring(response: 0.22, dampingFraction: 0.88)) {
-            store.selection = all[next]
+            switch entries[nextIndex] {
+            case .smart(let s):
+                store.selection = .smart(s)
+                listViewMode = .list
+            case .calendarView:
+                store.selection = .smart(.all)
+                listViewMode = .calendar
+            case .myList(let id):
+                store.selection = .calendar(id)
+                listViewMode = .list
+            }
         }
     }
 }

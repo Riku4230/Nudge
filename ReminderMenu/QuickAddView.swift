@@ -128,6 +128,17 @@ struct QuickAddView: View {
             }
             .buttonStyle(.plain)
             .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isParsing)
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Color.secondaryText)
+                    .frame(width: 22, height: 22)
+                    .background(MRTheme.Surface.inset, in: Circle())
+                    .overlay(Circle().stroke(MRTheme.Border.hairline, lineWidth: 0.5))
+            }
+            .buttonStyle(.plain)
+            .help("閉じる")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

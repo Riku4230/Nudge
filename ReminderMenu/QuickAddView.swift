@@ -47,6 +47,7 @@ struct QuickAddView: View {
             if showSuccess {
                 successView
             } else {
+                headerBar
                 composerBar
                 if optionsOpen && inputMode != .ai {
                     Divider().opacity(0.3).padding(.horizontal, 12)
@@ -59,7 +60,24 @@ struct QuickAddView: View {
         .background(.ultraThinMaterial)
         .background(MRTheme.Surface.background.opacity(0.5))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(alignment: .topTrailing) {
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(MRTheme.Border.hairline, lineWidth: 0.5)
+        )
+        .shadow(color: .black.opacity(0.3), radius: 40, y: 16)
+        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        .padding(12)
+        .onAppear { inputFocused = true }
+    }
+
+    // MARK: - Header
+
+    private var headerBar: some View {
+        HStack {
+            Text("クイック追加")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.tertiaryText)
+            Spacer()
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .bold))
@@ -70,16 +88,10 @@ struct QuickAddView: View {
             }
             .buttonStyle(.plain)
             .help("閉じる")
-            .offset(x: 8, y: -8)
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(MRTheme.Border.hairline, lineWidth: 0.5)
-        )
-        .shadow(color: .black.opacity(0.3), radius: 40, y: 16)
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
-        .padding(12)
-        .onAppear { inputFocused = true }
+        .padding(.horizontal, 14)
+        .padding(.top, 10)
+        .padding(.bottom, 2)
     }
 
     // MARK: - Composer bar

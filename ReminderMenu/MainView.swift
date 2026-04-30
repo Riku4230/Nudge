@@ -244,6 +244,14 @@ struct MainView: View {
         }
         .onDisappear { fnDoubleTap.stop() }
         .background(keyboardShortcutsLayer)
+        .onKeyPress(.tab, phases: .down) { press in
+            if press.modifiers.contains(.shift) {
+                cycleSelection(forward: false)
+            } else {
+                cycleSelection(forward: true)
+            }
+            return .handled
+        }
         .onChange(of: popoverHeight) { _, height in
             withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
                 app.requestedPopoverHeight = height
@@ -386,14 +394,6 @@ struct MainView: View {
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
                     optionsOpen.toggle()
                 }
-            }
-            // Tab — リスト順送り（スマート4つ → マイリスト → 先頭に戻る）
-            shortcutButton(key: .tab, modifiers: []) {
-                cycleSelection(forward: true)
-            }
-            // Shift+Tab — リスト逆送り
-            shortcutButton(key: .tab, modifiers: .shift) {
-                cycleSelection(forward: false)
             }
             // ⎋ — popover を閉じる
             shortcutButton(key: .escape, modifiers: []) {
